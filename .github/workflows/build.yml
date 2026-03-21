@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v4  # Updated to v4
+      uses: actions/checkout@v4
 
     - name: Setup Android NDK
       uses: nttld/setup-ndk@v1
@@ -18,7 +18,7 @@ jobs:
         wget https://ffmpeg.org/releases/ffmpeg-6.0.tar.xz
         tar -xf ffmpeg-6.0.tar.xz
 
-    - name: Compile Tiny FFmpeg (Muxing/Demuxing Focus)
+    - name: Compile Tiny FFmpeg (All-in-One Fix)
       run: |
         cd ffmpeg-6.0
         export NDK=$ANDROID_NDK_HOME
@@ -31,7 +31,7 @@ jobs:
         export SYSROOT=$TOOLCHAIN/sysroot
         export CROSS_PREFIX=$TOOLCHAIN/bin/llvm-
 
-        # 🔥 ULTRA SLIM CONFIGURATION (Size Optimization)
+        # 🔥 FIXED CONFIG: Merging ke liye jo libraries chahiye sab enable hain
         ./configure \
             --target-os=android \
             --arch=$ARCH \
@@ -47,8 +47,8 @@ jobs:
             --disable-programs \
             --disable-doc \
             --disable-avdevice \
-            --disable-swresample \
-            --disable-swscale \
+            --enable-swresample \
+            --enable-swscale \
             --disable-postproc \
             --disable-avfilter \
             --disable-network \
@@ -72,9 +72,11 @@ jobs:
         cp ffmpeg-6.0/libavformat/libavformat.so output_libs/
         cp ffmpeg-6.0/libavcodec/libavcodec.so output_libs/
         cp ffmpeg-6.0/libavutil/libavutil.so output_libs/
+        cp ffmpeg-6.0/libswresample/libswresample.so output_libs/
+        cp ffmpeg-6.0/libswscale/libswscale.so output_libs/
 
     - name: Upload Tiny .so Files
-      uses: actions/upload-artifact@v4  # Updated to v4
+      uses: actions/upload-artifact@v4
       with:
         name: Tiny-FFmpeg-Android-arm64
         path: output_libs/
