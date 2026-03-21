@@ -23,7 +23,7 @@ jobs:
         wget https://ffmpeg.org/releases/ffmpeg-8.1.tar.xz
         tar -xf ffmpeg-8.1.tar.xz
 
-    - name: Compile Tiny FFmpeg 8.1 (16KB Page Aligned)
+    - name: Compile Tiny FFmpeg 8.1 (16KB Aligned)
       run: |
         cd ffmpeg-8.1
         export NDK=$ANDROID_NDK_HOME
@@ -31,12 +31,11 @@ jobs:
         export API=24
         export ARCH=aarch64
         
-        # Paths for Compilers
         CC=$TOOLCHAIN/bin/${ARCH}-linux-android${API}-clang
         CXX=$TOOLCHAIN/bin/${ARCH}-linux-android${API}-clang++
         STRIP=$TOOLCHAIN/bin/llvm-strip
 
-        # 🔥 FFMPEG 8.1 ROCKET CONFIG: Merging Focus + Tiny Size
+        # 🔥 FFMPEG 8.1 FIXED CONFIG (Removed deprecated postproc)
         ./configure \
             --target-os=android \
             --arch=$ARCH \
@@ -48,7 +47,8 @@ jobs:
             --enable-shared \
             --disable-static \
             --enable-small \
-            --disable-stripping \
+            --disable-debug \
+            --disable-runtime-cpudetect \
             --extra-cflags="-Os -fPIC" \
             --extra-ldflags="-z max-page-size=16384" \
             --disable-everything \
@@ -56,7 +56,6 @@ jobs:
             --disable-doc \
             --disable-avdevice \
             --disable-avfilter \
-            --disable-postproc \
             --disable-network \
             --disable-encoders \
             --enable-swresample \
@@ -74,7 +73,7 @@ jobs:
         make clean
         make -j$(nproc)
 
-        # 🔥 Size Optimization (Cleaning Debug Info)
+        # 🔥 Size Optimization: Stripping symbols for production
         $STRIP libavformat/libavformat.so
         $STRIP libavcodec/libavcodec.so
         $STRIP libavutil/libavutil.so
@@ -93,5 +92,5 @@ jobs:
     - name: Upload Tiny FFmpeg 8.1
       uses: actions/upload-artifact@v4
       with:
-        name: Tiny-FFmpeg-8.1-arm64-v8a
+        name: Tiny-FFmpeg-8.1-arm64
         path: output_libs/
