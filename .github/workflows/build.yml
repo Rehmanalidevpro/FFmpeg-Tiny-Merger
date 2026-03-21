@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4  # Updated to v4
 
     - name: Setup Android NDK
       uses: nttld/setup-ndk@v1
@@ -18,7 +18,7 @@ jobs:
         wget https://ffmpeg.org/releases/ffmpeg-6.0.tar.xz
         tar -xf ffmpeg-6.0.tar.xz
 
-    - name: Compile Tiny FFmpeg (Only Merging/Muxing)
+    - name: Compile Tiny FFmpeg (Muxing/Demuxing Focus)
       run: |
         cd ffmpeg-6.0
         export NDK=$ANDROID_NDK_HOME
@@ -31,7 +31,7 @@ jobs:
         export SYSROOT=$TOOLCHAIN/sysroot
         export CROSS_PREFIX=$TOOLCHAIN/bin/llvm-
 
-        # 🔥 SIRF MERGING KE LIYE FORMATS ON KIYE HAIN (Size boht kam hoga)
+        # 🔥 ULTRA SLIM CONFIGURATION (Size Optimization)
         ./configure \
             --target-os=android \
             --arch=$ARCH \
@@ -64,13 +64,17 @@ jobs:
             --enable-bsf=aac_adtstoasc
 
         make clean
-        make -j4
+        make -j$(nproc)
+
+    - name: Prepare Artifacts Folder
+      run: |
+        mkdir -p output_libs
+        cp ffmpeg-6.0/libavformat/libavformat.so output_libs/
+        cp ffmpeg-6.0/libavcodec/libavcodec.so output_libs/
+        cp ffmpeg-6.0/libavutil/libavutil.so output_libs/
 
     - name: Upload Tiny .so Files
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4  # Updated to v4
       with:
         name: Tiny-FFmpeg-Android-arm64
-        path: |
-          ffmpeg-6.0/libavformat/libavformat.so
-          ffmpeg-6.0/libavcodec/libavcodec.so
-          ffmpeg-6.0/libavutil/libavutil.so
+        path: output_libs/
