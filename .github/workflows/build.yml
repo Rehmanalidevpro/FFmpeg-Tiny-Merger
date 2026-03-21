@@ -1,4 +1,4 @@
-name: Build Latest Tiny FFmpeg
+name: Build FFmpeg 8.1 Tiny Rocket
 on: [push, workflow_dispatch]
 
 jobs:
@@ -13,14 +13,14 @@ jobs:
       with:
         ndk-version: r25c
 
-    - name: Download FFmpeg 7.1 Source
+    - name: Download FFmpeg 8.1 Source
       run: |
-        wget https://ffmpeg.org/releases/ffmpeg-7.1.tar.xz
-        tar -xf ffmpeg-7.1.tar.xz
+        wget https://ffmpeg.org/releases/ffmpeg-8.1.tar.xz
+        tar -xf ffmpeg-8.1.tar.xz
 
-    - name: Compile Ultra-Slim FFmpeg (16KB Page Aligned)
+    - name: Compile Ultra-Slim FFmpeg 8.1 (16KB Page Aligned)
       run: |
-        cd ffmpeg-7.1
+        cd ffmpeg-8.1
         export NDK=$ANDROID_NDK_HOME
         export TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64
         export API=24
@@ -29,8 +29,7 @@ jobs:
         CXX=$TOOLCHAIN/bin/${ARCH}-linux-android${API}-clang++
         STRIP=$TOOLCHAIN/bin/llvm-strip
 
-        # 🔥 ROCKET FLAGS: 16KB Page size support + Size Optimization
-        # Humne encoders disable kiye hain kyunke aap sirf Merge kar rahy ho.
+        # 🔥 ROCKET FLAGS: 16KB Page size support for ALL libraries
         ./configure \
             --target-os=android \
             --arch=$ARCH \
@@ -48,12 +47,12 @@ jobs:
             --disable-programs \
             --disable-doc \
             --disable-avdevice \
-            --disable-swresample \
-            --disable-swscale \
-            --disable-postproc \
             --disable-avfilter \
+            --disable-postproc \
             --disable-network \
             --disable-encoders \
+            --enable-swresample \
+            --enable-swscale \
             --enable-avformat \
             --enable-avcodec \
             --enable-avutil \
@@ -67,20 +66,24 @@ jobs:
         make clean
         make -j$(nproc)
 
-        # 🔥 STRIP SYMBOLS: Debug data nikal kar size mazeed chota kar do
+        # 🔥 Size ko minimize karne ke liye extra kachra nikal do
         $STRIP libavformat/libavformat.so
         $STRIP libavcodec/libavcodec.so
         $STRIP libavutil/libavutil.so
+        $STRIP libswresample/libswresample.so
+        $STRIP libswscale/libswscale.so
 
     - name: Prepare Artifacts
       run: |
         mkdir -p output_libs
-        cp ffmpeg-7.1/libavformat/libavformat.so output_libs/
-        cp ffmpeg-7.1/libavcodec/libavcodec.so output_libs/
-        cp ffmpeg-7.1/libavutil/libavutil.so output_libs/
+        cp ffmpeg-8.1/libavformat/libavformat.so output_libs/
+        cp ffmpeg-8.1/libavcodec/libavcodec.so output_libs/
+        cp ffmpeg-8.1/libavutil/libavutil.so output_libs/
+        cp ffmpeg-8.1/libswresample/libswresample.so output_libs/
+        cp ffmpeg-8.1/libswscale/libswscale.so output_libs/
 
-    - name: Upload Tiny .so Files
+    - name: Upload Tiny FFmpeg 8.1
       uses: actions/upload-artifact@v4
       with:
-        name: Latest-Tiny-FFmpeg-arm64
+        name: Tiny-FFmpeg-8.1-arm64
         path: output_libs/
