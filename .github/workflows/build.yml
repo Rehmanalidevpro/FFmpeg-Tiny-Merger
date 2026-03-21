@@ -1,4 +1,4 @@
-name: Build Tiny FFmpeg
+name: Build Latest Tiny FFmpeg
 on: [push, workflow_dispatch]
 
 jobs:
@@ -13,46 +13,47 @@ jobs:
       with:
         ndk-version: r25c
 
-    - name: Download FFmpeg 6.0 Source
+    - name: Download FFmpeg 7.1 Source
       run: |
-        wget https://ffmpeg.org/releases/ffmpeg-6.0.tar.xz
-        tar -xf ffmpeg-6.0.tar.xz
+        wget https://ffmpeg.org/releases/ffmpeg-7.1.tar.xz
+        tar -xf ffmpeg-7.1.tar.xz
 
-    - name: Compile Tiny FFmpeg (All-in-One Fix)
+    - name: Compile Ultra-Slim FFmpeg (16KB Page Aligned)
       run: |
-        cd ffmpeg-6.0
+        cd ffmpeg-7.1
         export NDK=$ANDROID_NDK_HOME
         export TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64
         export API=24
         export ARCH=aarch64
-        export CPU=armv8-a
-        export CC=$TOOLCHAIN/bin/${ARCH}-linux-android${API}-clang
-        export CXX=$TOOLCHAIN/bin/${ARCH}-linux-android${API}-clang++
-        export SYSROOT=$TOOLCHAIN/sysroot
-        export CROSS_PREFIX=$TOOLCHAIN/bin/llvm-
+        CC=$TOOLCHAIN/bin/${ARCH}-linux-android${API}-clang
+        CXX=$TOOLCHAIN/bin/${ARCH}-linux-android${API}-clang++
+        STRIP=$TOOLCHAIN/bin/llvm-strip
 
-        # 🔥 FIXED CONFIG: Merging ke liye jo libraries chahiye sab enable hain
+        # 🔥 ROCKET FLAGS: 16KB Page size support + Size Optimization
+        # Humne encoders disable kiye hain kyunke aap sirf Merge kar rahy ho.
         ./configure \
             --target-os=android \
             --arch=$ARCH \
-            --cpu=$CPU \
+            --cpu=armv8-a \
             --cc=$CC \
             --cxx=$CXX \
-            --sysroot=$SYSROOT \
-            --cross-prefix=$CROSS_PREFIX \
+            --cross-prefix=$TOOLCHAIN/bin/llvm- \
             --enable-cross-compile \
             --enable-shared \
             --disable-static \
             --enable-small \
+            --extra-cflags="-Os -fPIC" \
+            --extra-ldflags="-z max-page-size=16384" \
+            --disable-everything \
             --disable-programs \
             --disable-doc \
             --disable-avdevice \
-            --enable-swresample \
-            --enable-swscale \
+            --disable-swresample \
+            --disable-swscale \
             --disable-postproc \
             --disable-avfilter \
             --disable-network \
-            --disable-everything \
+            --disable-encoders \
             --enable-avformat \
             --enable-avcodec \
             --enable-avutil \
@@ -66,17 +67,20 @@ jobs:
         make clean
         make -j$(nproc)
 
-    - name: Prepare Artifacts Folder
+        # 🔥 STRIP SYMBOLS: Debug data nikal kar size mazeed chota kar do
+        $STRIP libavformat/libavformat.so
+        $STRIP libavcodec/libavcodec.so
+        $STRIP libavutil/libavutil.so
+
+    - name: Prepare Artifacts
       run: |
         mkdir -p output_libs
-        cp ffmpeg-6.0/libavformat/libavformat.so output_libs/
-        cp ffmpeg-6.0/libavcodec/libavcodec.so output_libs/
-        cp ffmpeg-6.0/libavutil/libavutil.so output_libs/
-        cp ffmpeg-6.0/libswresample/libswresample.so output_libs/
-        cp ffmpeg-6.0/libswscale/libswscale.so output_libs/
+        cp ffmpeg-7.1/libavformat/libavformat.so output_libs/
+        cp ffmpeg-7.1/libavcodec/libavcodec.so output_libs/
+        cp ffmpeg-7.1/libavutil/libavutil.so output_libs/
 
     - name: Upload Tiny .so Files
       uses: actions/upload-artifact@v4
       with:
-        name: Tiny-FFmpeg-Android-arm64
+        name: Latest-Tiny-FFmpeg-arm64
         path: output_libs/
