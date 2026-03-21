@@ -1,12 +1,21 @@
 name: Build FFmpeg 8.1 Tiny Rocket
 on: [push, workflow_dispatch]
 
+# 🔥 Node 24 ki warning fix karne ke liye environment variable
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
+
+    - name: Setup Build Tools
+      run: |
+        sudo apt update
+        sudo apt install -y build-essential pkg-config yasm nasm xz-utils
 
     - name: Setup Android NDK
       uses: nttld/setup-ndk@v1
@@ -25,11 +34,13 @@ jobs:
         export TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64
         export API=24
         export ARCH=aarch64
+        
+        # Paths for Compilers
         CC=$TOOLCHAIN/bin/${ARCH}-linux-android${API}-clang
         CXX=$TOOLCHAIN/bin/${ARCH}-linux-android${API}-clang++
         STRIP=$TOOLCHAIN/bin/llvm-strip
 
-        # 🔥 ROCKET FLAGS: 16KB Page size support for ALL libraries
+        # 🔥 ROCKET FLAGS: 16KB Page size + Tiny Size + All Formats support
         ./configure \
             --target-os=android \
             --arch=$ARCH \
@@ -66,7 +77,7 @@ jobs:
         make clean
         make -j$(nproc)
 
-        # 🔥 Size ko minimize karne ke liye extra kachra nikal do
+        # 🔥 Size Stripping (Kachra nikal do)
         $STRIP libavformat/libavformat.so
         $STRIP libavcodec/libavcodec.so
         $STRIP libavutil/libavutil.so
