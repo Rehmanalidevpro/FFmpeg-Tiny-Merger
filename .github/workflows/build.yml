@@ -1,0 +1,76 @@
+name: Build Tiny FFmpeg
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Setup Android NDK
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r25c
+
+    - name: Download FFmpeg 6.0 Source
+      run: |
+        wget https://ffmpeg.org/releases/ffmpeg-6.0.tar.xz
+        tar -xf ffmpeg-6.0.tar.xz
+
+    - name: Compile Tiny FFmpeg (Only Merging/Muxing)
+      run: |
+        cd ffmpeg-6.0
+        export NDK=$ANDROID_NDK_HOME
+        export TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64
+        export API=24
+        export ARCH=aarch64
+        export CPU=armv8-a
+        export CC=$TOOLCHAIN/bin/${ARCH}-linux-android${API}-clang
+        export CXX=$TOOLCHAIN/bin/${ARCH}-linux-android${API}-clang++
+        export SYSROOT=$TOOLCHAIN/sysroot
+        export CROSS_PREFIX=$TOOLCHAIN/bin/llvm-
+
+        # 🔥 SIRF MERGING KE LIYE FORMATS ON KIYE HAIN (Size boht kam hoga)
+        ./configure \
+            --target-os=android \
+            --arch=$ARCH \
+            --cpu=$CPU \
+            --cc=$CC \
+            --cxx=$CXX \
+            --sysroot=$SYSROOT \
+            --cross-prefix=$CROSS_PREFIX \
+            --enable-cross-compile \
+            --enable-shared \
+            --disable-static \
+            --enable-small \
+            --disable-programs \
+            --disable-doc \
+            --disable-avdevice \
+            --disable-swresample \
+            --disable-swscale \
+            --disable-postproc \
+            --disable-avfilter \
+            --disable-network \
+            --disable-everything \
+            --enable-avformat \
+            --enable-avcodec \
+            --enable-avutil \
+            --enable-protocol=file,pipe \
+            --enable-demuxer=mov,mp4,m4a,3gp,3g2,mj2,matroska,webm,mp3,aac,flac \
+            --enable-muxer=mp4,mov,matroska,webm,mp3,adts \
+            --enable-decoder=h264,hevc,vp8,vp9,av1,aac,opus,vorbis,mp3 \
+            --enable-parser=h264,hevc,vp8,vp9,av1,aac,opus,vorbis \
+            --enable-bsf=aac_adtstoasc
+
+        make clean
+        make -j4
+
+    - name: Upload Tiny .so Files
+      uses: actions/upload-artifact@v3
+      with:
+        name: Tiny-FFmpeg-Android-arm64
+        path: |
+          ffmpeg-6.0/libavformat/libavformat.so
+          ffmpeg-6.0/libavcodec/libavcodec.so
+          ffmpeg-6.0/libavutil/libavutil.so
