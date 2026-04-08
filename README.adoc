@@ -1,10 +1,11 @@
-= ⚡ FFmpeg-Tiny-Merger: Android Build Engine
+= ⚡ FFmpeg-Tiny-Merger: Elite Build Engine
 Rehman Ali <https://github.com/Rehmanalidevpro>
 v8.1.0, 2024
 :toc: macro
-:toc-title: 🛠 Engineering Menu
+:toc-title: 📌 Engineering Blueprint
 :icons: font
 :source-highlighter: highlight.js
+:experimental:
 
 image:https://img.shields.io/github/actions/workflow/status/Rehmanalidevpro/FFmpeg-Tiny-Merger/build.yml?style=for-the-badge&logo=githubactions&label=Build%20Status[Build Status]
 image:https://img.shields.io/badge/FFmpeg-8.1--Tiny-red?style=for-the-badge&logo=ffmpeg[FFmpeg Version]
@@ -13,59 +14,56 @@ image:https://img.shields.io/badge/Architecture-arm64--v8a-blue?style=for-the-ba
 
 ---
 
-== 📝 Project Overview
-Developed by *Rehman Ali*, this repository provides a high-efficiency build pipeline for **FFmpeg 8.1** specifically tuned for modern Android environments. By stripped-down configurations and **16KB page alignment**, these libraries are optimized for minimal disk footprint and maximum performance.
+== 📖 Mission Statement
+Created by *Rehman Ali*, the **FFmpeg-Tiny-Merger** is not just a repository; it is a precision-engineered build system. It produces ultra-stripped, high-performance `.so` binaries for Android, specifically optimized for **16KB page-size alignment** (mandatory for Android 15+).
 
 toc::[]
 
-== ⚙️ Technical Specifications
-[cols="1,2", frame=none, grid=rows]
+== 🛠️ Feature Control Center (Customization)
+The build is modular. You can "Toggle" features ON or OFF by modifying the `build.yml` file. Here is how you can craft your own custom build:
+
+=== How to Customize:
+1. **Fork** this repository to your account.
+2. Edit the `.github/workflows/build.yml` file.
+3. Locate the `./configure` section and toggle flags.
+
+=== 🎛️ The Toggle Reference
+[cols="1,1,2", options="header", frame=none, grid=rows]
 |===
-| *Target OS* | Android (API 24+)
-| *Toolchain* | LLVM / NDK r25c
-| *Alignment* | 16384 (16KB) for Android 15+ Compatibility
-| *Binary Size* | Ultra-Lean (Disabled everything except core codecs)
-| *Output* | Shared Libraries (`.so` files)
+| Feature | Flag | Effect
+| *Minimize Size* | `--disable-everything` | *DEFAULT:* Disables all features for the smallest footprint.
+| *Add Video Support* | `--enable-decoder=h264` | Enables H.264 video decoding.
+| *Add Audio Support* | `--enable-decoder=aac` | Enables AAC audio decoding.
+| *Enable Merging* | `--enable-muxer=mp4` | Allows merging streams into an MP4 container.
+| *Network Support* | `--enable-network` | *OFF by default.* Enable if you need to stream from URLs.
+| *Advanced Scaling* | `--enable-swscale` | *ON by default.* Essential for video resizing.
 |===
 
-== 🏗 Enabled Components
-The build is optimized for specific media merging and playback tasks:
+[IMPORTANT]
+====
+If you need a specific codec (like `mpeg4`), just add `--enable-decoder=mpeg4` to the configure list. If you want to remove something, simply delete its `--enable-` line.
+====
 
-*   **Decoders:** H.264, HEVC (H.265), VP8, VP9, AV1, AAC, Opus, MP3.
-*   **Demuxers:** MP4, MOV, WebM, Matroska, AAC, FLAC, MP3.
-*   **Protocols:** File, Pipe.
-*   **Optimization:** `--enable-small` and symbol stripping enabled.
+== 🏗 Engineering Specs
+[horizontal]
+*Toolchain* :: LLVM / NDK r25c Integration
+*Alignment* :: `-z max-page-size=16384` (Future-proof for Android 15)
+*Optimization* :: `--enable-small` + `llvm-strip` (Production Ready)
+*Binary Output* :: `libavcodec`, `libavformat`, `libavutil`, `libswresample`, `libswscale`.
 
-== 🚀 How to Build & Use
+== 🚀 Automation Pipeline
+. **Trigger:** Push changes or manually run the workflow from the **Actions** tab.
+. **Processing:** GitHub Actions compiles the source on Ubuntu-latest using a cloud-hosted NDK environment.
+. **Artifacts:** Once complete, download the `Tiny-FFmpeg-8.1-arm64` bundle from the summary page.
 
-=== 1. Automated Build
-This project uses **GitHub Actions**. You don't need to compile anything locally!
-. Fork this repository.
-. Go to the *Actions* tab.
-. Select the `Build FFmpeg 8.1 Tiny Rocket` workflow.
-. Click `Run workflow`.
-. Once finished, download the artifacts named `Tiny-FFmpeg-8.1-arm64`.
-
-=== 2. Integration
-Add the generated `.so` files to your Android project:
-[source,text]
-----
-app/src/main/jniLibs/arm64-v8a/
-├── libavcodec.so
-├── libavformat.so
-├── libavutil.so
-├── libswresample.so
-└── libswscale.so
-----
-
-== 📜 License
-This build engine is open-sourced under the *MIT License*. Feel free to use it in your commercial or personal Android projects.
+== 📜 Legal & Licensing
+Distributed under the *MIT License*. Built with passion by *Rehmanalidevpro*.
 
 ---
 
-[TIP]
+[NOTE]
 ====
-If you appreciate this specialized build, consider giving it a ⭐ to help other Android developers!
+⭐ **Stargaze this Repo!** If this engine powers your Android app, please leave a star. It keeps the project alive!
 ====
 
-Copyright © 2024 *Rehmanalidevpro*
+Copyright © 2024 *Rehman Ali*. All Rights Reserved.
