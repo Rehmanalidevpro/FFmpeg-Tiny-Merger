@@ -1,0 +1,71 @@
+= ⚡ FFmpeg-Tiny-Merger: Android Build Engine
+Rehman Ali <https://github.com/Rehmanalidevpro>
+v8.1.0, 2024
+:toc: macro
+:toc-title: 🛠 Engineering Menu
+:icons: font
+:source-highlighter: highlight.js
+
+image:https://img.shields.io/github/actions/workflow/status/Rehmanalidevpro/FFmpeg-Tiny-Merger/build.yml?style=for-the-badge&logo=githubactions&label=Build%20Status[Build Status]
+image:https://img.shields.io/badge/FFmpeg-8.1--Tiny-red?style=for-the-badge&logo=ffmpeg[FFmpeg Version]
+image:https://img.shields.io/badge/Android_NDK-r25c-green?style=for-the-badge&logo=android[NDK Version]
+image:https://img.shields.io/badge/Architecture-arm64--v8a-blue?style=for-the-badge[Arch]
+
+---
+
+== 📝 Project Overview
+Developed by *Rehman Ali*, this repository provides a high-efficiency build pipeline for **FFmpeg 8.1** specifically tuned for modern Android environments. By stripped-down configurations and **16KB page alignment**, these libraries are optimized for minimal disk footprint and maximum performance.
+
+toc::[]
+
+== ⚙️ Technical Specifications
+[cols="1,2", frame=none, grid=rows]
+|===
+| *Target OS* | Android (API 24+)
+| *Toolchain* | LLVM / NDK r25c
+| *Alignment* | 16384 (16KB) for Android 15+ Compatibility
+| *Binary Size* | Ultra-Lean (Disabled everything except core codecs)
+| *Output* | Shared Libraries (`.so` files)
+|===
+
+== 🏗 Enabled Components
+The build is optimized for specific media merging and playback tasks:
+
+*   **Decoders:** H.264, HEVC (H.265), VP8, VP9, AV1, AAC, Opus, MP3.
+*   **Demuxers:** MP4, MOV, WebM, Matroska, AAC, FLAC, MP3.
+*   **Protocols:** File, Pipe.
+*   **Optimization:** `--enable-small` and symbol stripping enabled.
+
+== 🚀 How to Build & Use
+
+=== 1. Automated Build
+This project uses **GitHub Actions**. You don't need to compile anything locally!
+. Fork this repository.
+. Go to the *Actions* tab.
+. Select the `Build FFmpeg 8.1 Tiny Rocket` workflow.
+. Click `Run workflow`.
+. Once finished, download the artifacts named `Tiny-FFmpeg-8.1-arm64`.
+
+=== 2. Integration
+Add the generated `.so` files to your Android project:
+[source,text]
+----
+app/src/main/jniLibs/arm64-v8a/
+├── libavcodec.so
+├── libavformat.so
+├── libavutil.so
+├── libswresample.so
+└── libswscale.so
+----
+
+== 📜 License
+This build engine is open-sourced under the *MIT License*. Feel free to use it in your commercial or personal Android projects.
+
+---
+
+[TIP]
+====
+If you appreciate this specialized build, consider giving it a ⭐ to help other Android developers!
+====
+
+Copyright © 2024 *Rehmanalidevpro*
