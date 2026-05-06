@@ -1,4 +1,4 @@
-name: Build FFmpeg 8.1 Tiny Rocket
+name: Build FFmpeg 8.1 Universal (All-in-One)
 on: [push, workflow_dispatch]
 
 jobs:
@@ -23,74 +23,102 @@ jobs:
         wget https://ffmpeg.org/releases/ffmpeg-8.1.tar.xz
         tar -xf ffmpeg-8.1.tar.xz
 
-    - name: Compile Tiny FFmpeg 8.1 (16KB Aligned)
+    - name: Compile Universal FFmpeg (32-bit, 64-bit, Emulators)
       run: |
         cd ffmpeg-8.1
         export NDK=$ANDROID_NDK_HOME
         export TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64
         export API=24
-        export ARCH=aarch64
         
-        CC=$TOOLCHAIN/bin/${ARCH}-linux-android${API}-clang
-        CXX=$TOOLCHAIN/bin/${ARCH}-linux-android${API}-clang++
-        STRIP=$TOOLCHAIN/bin/llvm-strip
+        # Output folder jahan sab architectures save honge
+        mkdir -p ../output_libs
 
-        # 🔥 FFMPEG 8.1 FIXED CONFIG (Removed deprecated postproc)
-        ./configure \
-            --target-os=android \
-            --arch=$ARCH \
-            --cpu=armv8-a \
-            --cc=$CC \
-            --cxx=$CXX \
-            --cross-prefix=$TOOLCHAIN/bin/llvm- \
-            --enable-cross-compile \
-            --enable-shared \
-            --disable-static \
-            --enable-small \
-            --disable-debug \
-            --disable-runtime-cpudetect \
-            --extra-cflags="-Os -fPIC" \
-            --extra-ldflags="-z max-page-size=16384" \
-            --disable-everything \
-            --disable-programs \
-            --disable-doc \
-            --disable-avdevice \
-            --disable-avfilter \
-            --disable-network \
-            --disable-encoders \
-            --enable-swresample \
-            --enable-swscale \
-            --enable-avformat \
-            --enable-avcodec \
-            --enable-avutil \
-            --enable-protocol=file,pipe \
-            --enable-demuxer=mov,mp4,m4a,3gp,3g2,mj2,matroska,webm,mp3,aac,flac \
-            --enable-muxer=mp4,mov,matroska,webm,mp3,adts \
-            --enable-decoder=h264,hevc,vp8,vp9,av1,aac,opus,vorbis,mp3 \
-            --enable-parser=h264,hevc,vp8,vp9,av1,aac,opus,vorbis \
-            --enable-bsf=aac_adtstoasc
+        # Loop for all 4 architectures
+        for ABI in "arm64-v8a" "armeabi-v7a" "x86" "x86_64"; do
+          echo "======================================"
+          echo "🔥 Building FFmpeg for $ABI 🔥"
+          echo "======================================"
+          
+          make clean || true
 
-        make clean
-        make -j$(nproc)
+          # Set architecture specific variables
+          if[ "$ABI" = "arm64-v8a" ]; then
+            ARCH="aarch64"
+            CPU="armv8-a"
+            CC_TARGET="aarch64-linux-android"
+          elif[ "$ABI" = "armeabi-v7a" ]; then
+            ARCH="arm"
+            CPU="armv7-a"
+            CC_TARGET="armv7a-linux-androideabi"
+          elif [ "$ABI" = "x86_64" ]; then
+            ARCH="x86_64"
+            CPU="x86_64"
+            CC_TARGET="x86_64-linux-android"
+          elif [ "$ABI" = "x86" ]; then
+            ARCH="x86"
+            CPU="i686"
+            CC_TARGET="i686-linux-android"
+          fi
 
-        # 🔥 Size Optimization: Stripping symbols for production
-        $STRIP libavformat/libavformat.so
-        $STRIP libavcodec/libavcodec.so
-        $STRIP libavutil/libavutil.so
-        $STRIP libswresample/libswresample.so
-        $STRIP libswscale/libswscale.so
+          CC=$TOOLCHAIN/bin/${CC_TARGET}${API}-clang
+          CXX=$TOOLCHAIN/bin/${CC_TARGET}${API}-clang++
+          STRIP=$TOOLCHAIN/bin/llvm-strip
 
-    - name: Prepare Artifacts
-      run: |
-        mkdir -p output_libs
-        cp ffmpeg-8.1/libavformat/libavformat.so output_libs/
-        cp ffmpeg-8.1/libavcodec/libavcodec.so output_libs/
-        cp ffmpeg-8.1/libavutil/libavutil.so output_libs/
-        cp ffmpeg-8.1/libswresample/libswresample.so output_libs/
-        cp ffmpeg-8.1/libswscale/libswscale.so output_libs/
+          ./configure \
+              --target-os=android \
+              --arch=$ARCH \
+              --cpu=$CPU \
+              --cc=$CC \
+              --cxx=$CXX \
+              --cross-prefix=$TOOLCHAIN/bin/llvm- \
+              --enable-cross-compile \
+              --enable-shared \
+              --disable-static \
+              --enable-small \
+              --disable-debug \
+              --disable-runtime-cpudetect \
+              --extra-cflags="-Os -fPIC" \
+              --extra-ldflags="-z max-page-size=16384" \
+              --disable-everything \
+              --disable-programs \
+              --disable-doc \
+              --disable-avdevice \
+              --disable-avfilter \
+              --disable-network \
+              --disable-encoders \
+              --enable-swresample \
+              --enable-swscale \
+              --enable-avformat \
+              --enable-avcodec \
+              --enable-avutil \
+              --enable-protocol=file,pipe \
+              --enable-demuxer=mov,mp4,m4a,3gp,3g2,mj2,matroska,webm,mp3,aac,flac \
+              --enable-muxer=mp4,mov,matroska,webm,mp3,adts \
+              --enable-decoder=h264,hevc,vp8,vp9,av1,aac,opus,vorbis,mp3 \
+              --enable-parser=h264,hevc,vp8,vp9,av1,aac,opus,vorbis \
+              --enable-bsf=aac_adtstoasc
 
-    - name: Upload Tiny FFmpeg 8.1
+          make -j$(nproc)
+
+          # Size Optimization: Stripping symbols for production
+          $STRIP libavformat/libavformat.so
+          $STRIP libavcodec/libavcodec.so
+          $STRIP libavutil/libavutil.so
+          $STRIP libswresample/libswresample.so
+          $STRIP libswscale/libswscale.so
+
+          # Copy to ABI specific folder
+          mkdir -p ../output_libs/$ABI
+          cp libavformat/libavformat.so ../output_libs/$ABI/
+          cp libavcodec/libavcodec.so ../output_libs/$ABI/
+          cp libavutil/libavutil.so ../output_libs/$ABI/
+          cp libswresample/libswresample.so ../output_libs/$ABI/
+          cp libswscale/libswscale.so ../output_libs/$ABI/
+          
+        done
+
+    - name: Upload Universal Tiny FFmpeg
       uses: actions/upload-artifact@v4
       with:
-        name: Tiny-FFmpeg-8.1-arm64
+        name: Universal-Tiny-FFmpeg-8.1
         path: output_libs/
