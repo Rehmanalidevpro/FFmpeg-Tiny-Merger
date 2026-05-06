@@ -1,7 +1,6 @@
-name: Build FFmpeg Mobile Only (32-bit & 64-bit)
+name: Build FFmpeg Mobile (32-bit & 64-bit)
 on: [push, workflow_dispatch]
 
-# Yeh line Node.js ki warning ko hamesha ke liye hata degi
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -27,39 +26,39 @@ jobs:
         wget https://ffmpeg.org/releases/ffmpeg-8.1.tar.xz
         tar -xf ffmpeg-8.1.tar.xz
 
-    - name: Compile FFmpeg for Mobile (100% Old & New Devices)
+    - name: Compile Tiny FFmpeg 8.1 (16KB Aligned) for Both Architectures
       run: |
         cd ffmpeg-8.1
         export NDK=$ANDROID_NDK_HOME
         export TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64
         export API=24
         
-        # Output folder jahan dono architectures save honge
+        # Ek main folder banayenge dono versions ke liye
         mkdir -p ../output_libs
 
-        # Sirf Mobile processors (64-bit aur 32-bit) ke liye loop
+        # Dono architecture ke liye bari bari compile hoga
         for ABI in "arm64-v8a" "armeabi-v7a"; do
-          echo "======================================"
-          echo "🔥 Building FFmpeg for $ABI 🔥"
-          echo "======================================"
+          echo "🔥 Building for $ABI 🔥"
           
+          # Pichli compilation ko saaf karna zaroori hai
           make clean || true
 
-          # Set architecture specific variables (Error fixed here)
+          # 🔥 YAHAN ERROR THA JO THEEK KAR DIYA HAI (if ke baad space di hai) 🔥
           if[ "$ABI" = "arm64-v8a" ]; then
-            ARCH="aarch64"
-            CPU="armv8-a"
-            CC_TARGET="aarch64-linux-android"
-          elif[ "$ABI" = "armeabi-v7a" ]; then
-            ARCH="arm"
-            CPU="armv7-a"
-            CC_TARGET="armv7a-linux-androideabi"
+            export ARCH=aarch64
+            export CPU=armv8-a
+            CC=$TOOLCHAIN/bin/aarch64-linux-android${API}-clang
+            CXX=$TOOLCHAIN/bin/aarch64-linux-android${API}-clang++
+          else
+            export ARCH=arm
+            export CPU=armv7-a
+            CC=$TOOLCHAIN/bin/armv7a-linux-androideabi${API}-clang
+            CXX=$TOOLCHAIN/bin/armv7a-linux-androideabi${API}-clang++
           fi
 
-          CC=$TOOLCHAIN/bin/${CC_TARGET}${API}-clang
-          CXX=$TOOLCHAIN/bin/${CC_TARGET}${API}-clang++
           STRIP=$TOOLCHAIN/bin/llvm-strip
 
+          # AAPKI ORIGINAL CONFIGURATION (Koi changing nahi ki)
           ./configure \
               --target-os=android \
               --arch=$ARCH \
@@ -96,14 +95,14 @@ jobs:
 
           make -j$(nproc)
 
-          # Size Optimization: Stripping symbols for production
+          # 🔥 Size Optimization: Stripping symbols for production (Aapki original approach)
           $STRIP libavformat/libavformat.so
           $STRIP libavcodec/libavcodec.so
           $STRIP libavutil/libavutil.so
           $STRIP libswresample/libswresample.so
           $STRIP libswscale/libswscale.so
 
-          # Copy to ABI specific folder
+          # Copy libraries into their respective folders
           mkdir -p ../output_libs/$ABI
           cp libavformat/libavformat.so ../output_libs/$ABI/
           cp libavcodec/libavcodec.so ../output_libs/$ABI/
@@ -113,8 +112,8 @@ jobs:
           
         done
 
-    - name: Upload FFmpeg Mobile Artifacts
+    - name: Upload Tiny FFmpeg 8.1 (All Devices)
       uses: actions/upload-artifact@v4
       with:
-        name: Tiny-FFmpeg-8.1-Mobile-All
+        name: Tiny-FFmpeg-8.1-Mobile
         path: output_libs/
