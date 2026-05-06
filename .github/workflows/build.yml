@@ -43,7 +43,7 @@ jobs:
           # Pichli compilation ko saaf karna zaroori hai
           make clean || true
 
-          # 🔥 YAHAN ERROR THA JO THEEK KAR DIYA HAI (if ke baad space di hai) 🔥
+          # 🔥 ERROR FIXED HERE: if aur [ ke darmiyan space de di gayi hai 🔥
           if[ "$ABI" = "arm64-v8a" ]; then
             export ARCH=aarch64
             export CPU=armv8-a
